@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:tools="http://schemas.android.com/tools"
+    package="com.cui.mediaplayer"
+          xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.MEDIA_CONTENT_CONTROL"/>
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme"
+        tools:ignore="GoogleAppIndexingWarning">
+        <activity android:name=".MainActivity">
+
+        </activity>
+        <activity android:name=".ServiceGetActivity" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+
+
+        <service
+            android:name=".AudioPlayerService"
+            android:enabled="true"
+            android:exported="true">
+        </service>
+        <!--<receiver android:name=".QQMusicReciver" >-->
+
+            <!--<intent-filter>-->
+                <!--&lt;!&ndash;<action android:name="android.intent.action.BOOT_COMPLETED"/>&ndash;&gt;-->
+                <!--<action android:name="com.tencent.qqmusic.ACTION_RATE_DIALOG_ADD_LISTEN_COUNT"/>-->
+                <!--<action android:name="com.tencent.qqmusic.ACTION_PLAY_STARTED.QQMusicPhone"/>-->
+                <!--<action android:name="com.tencent.qqmusic.ACTION_START_PLAYSONG.QQMusicPhone"/>-->
+                <!--<action android:name="com.tencent.qqmusic.ACTION_META_CHANGED.QQMusicPhone"/>-->
+                <!--<action android:name="com.tencent.qqmusic.ACTION_PLAYSONG_CHANGED.QQMusicPhone"/>-->
+                <!--<action android:name="com.tencent.qqmusic.ACTION_SONG_PLAY_STOPPING.QQMusicPhone"/>-->
+                <!--<action android:name="com.android.music.metachanged"/>-->
+                <!--<action android:name="com.tencent.qqmusic.ACTION_PLAYLIST_CHANGED.QQMusicPhone"/>-->
+                <!--<action android:name="com.tencent.qqmusic.ACTION_BACKGROUND_FOREGROUND_STATE_CHANGED.QQMusicPhone"/>-->
+                <!--&lt;!&ndash;<action android:name="com.android.music.playstatechanged"/>&ndash;&gt;-->
+                <!--&lt;!&ndash;<action android:name="com.android.music.playbackcomplete"/>&ndash;&gt;-->
+                <!--&lt;!&ndash;<action android:name="com.android.music.queuechanged"/>&ndash;&gt;-->
+                <!--&lt;!&ndash;<action android:name="com.tencent.qqmusic"/>&ndash;&gt;-->
+            <!--</intent-filter>-->
+        <!--</receiver>-->
+
+        <service
+            android:name=".RemoteControlService"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
+            >
+            <intent-filter>
+                <action android:name="com.example.wangzhaopeng.music.BIND_RC_CONTROL_SERVICE" />
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+    </application>
+
+</manifest>
