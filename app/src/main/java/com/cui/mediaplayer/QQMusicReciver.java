@@ -4,6 +4,8 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v4.media.MediaBrowserServiceCompat;
+import android.support.v4.media.session.MediaSessionCompat;
 import android.util.Log;
 
 import java.util.Set;
@@ -11,25 +13,35 @@ import java.util.Set;
 public class QQMusicReciver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
-        Log.e("RunTest", "-----接收到QQ音乐广播--------???" + intent.getAction());
-//        if ("com.android.music.metachanged".equals(intent.getAction())) {
+
+        Bundle bundle=intent.getExtras();
+        if (bundle!=null){
+            for (String s : bundle.keySet()) {
+            }
+        }
+
+
+//        if ("com.tencent.qqmusictv.ACTION_META_CHANGEDQQMusicTV".equals(intent.getAction())) {
+//            Bundle bundle=intent.getExtras();
+//            if (bundle!=null){
+//                songInfo(intent);
+//                for (String s:bundle.keySet()) {
+//                }
+//            }
+//
+//        }
+// if ("com.android.music.metachanged".equals(intent.getAction())) {
 //            songInfo(intent);
 //        }
-//
+
 //        if (("com.tencent.qqmusic.ACTION_META_CHANGED.QQMusicPhone").equals(intent.getAction())) {
-//            Log.e("RunTest","-数据改变----QQ音乐广播---开始-----???");
 //            songInfo(intent);
 //            Bundle bundle = intent.getExtras();
 //            if (bundle != null) {
-//                Log.e("RunTest", "-----数据改变---bundle-----???" + bundle.toString());
-//                Log.e("RunTest", "-----数据改变-intent-------???" + intent.toString());
 ////                Set<String> set = bundle.keySet();
 ////                for (String s : set) {
-////                    Log.e("RunTest", "-----数据改变--------???" + s);
-////                    Log.e("RunTest", "-----数据改变--------???" + bundle.get(s));
 ////                }
 //            }
-//            Log.e("RunTest","-数据改变----QQ音乐广播------结束--???");
 //        }
     }
 

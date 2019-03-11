@@ -1,5 +1,6 @@
 package com.cui.mediaplayer;
 
+import android.annotation.SuppressLint;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -8,18 +9,23 @@ import android.content.ServiceConnection;
 import android.databinding.DataBindingUtil;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.media.AudioManager;
+import android.media.MediaMetadata;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.media.RemoteController;
 import android.media.session.MediaController;
+import android.media.session.MediaSession;
+import android.os.Build;
+import android.os.Bundle;
 import android.os.IBinder;
-import android.os.RemoteException;
+import android.support.annotation.RequiresApi;
 import android.support.v4.media.MediaBrowserCompat;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaControllerCompat;
+import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.SeekBar;
@@ -28,7 +34,6 @@ import com.cui.mediaplayer.databinding.ActivityMainBinding;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener, ServiceConnection,
         SeekBar.OnSeekBarChangeListener, MediaPlayerHelper.MediaPlayerUpdateCallBack {
@@ -43,7 +48,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private MediaControllerCompat.Callback mMediaControllerCallback = new MediaControllerCompat.Callback() {
         @Override
         public void onPlaybackStateChanged(PlaybackStateCompat state) {
-            Log.e("RunTest", "-------onPlaybackStateChanged--播放状态改变----???");
             switch (state.getState()) {
                 case PlaybackStateCompat.STATE_NONE://无任何状态
                     binding.imgPause.setImageResource(R.drawable.img_pause);
@@ -68,12 +72,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         @Override
         public void onMetadataChanged(MediaMetadataCompat metadata) {
             super.onMetadataChanged(metadata);
-            Log.e("RunTest", "-------onMetadataChanged------???");
             binding.MusicTitle.setText(metadata.getString(MediaMetadataCompat.METADATA_KEY_TITLE));
         }
     };
     private MediaBrowserCompat mMediaBrowser;
 
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -83,12 +87,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         list_music = getMusics();
 
-        Intent intent = new Intent(this, AudioPlayerService.class);
-        getApplication(). bindService(intent, this,0);
-
+//        Intent intent = new Intent(this, AudioPlayerService.class);
+//        getApplication().bindService(intent, this, 0);
 
     }
-
 
 
     private void setViewOnclickListener(View... views) {
@@ -108,15 +110,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 } else {
                     mMediaController.getTransportControls().playFromSearch("", null);
                 }
-                Log.e("RunTest", "-----暂停--------???");
                 break;
             case R.id.img_last:
                 mMediaController.getTransportControls().skipToPrevious();
-                Log.e("RunTest", "---------上一个----???");
                 break;
             case R.id.img_next:
                 mMediaController.getTransportControls().skipToNext();
-                Log.e("RunTest", "---------下一个----???");
                 break;
         }
 
@@ -124,7 +123,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
-        Log.e("RunTest4", "-------主页服务连接------???"+iBinder);
         if (iBinder instanceof AudioPlayerService.ServiceBinder) {
             try {
                 //获取服务
@@ -143,28 +141,26 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 //注册回调
                 mMediaController.registerCallback(mMediaControllerCallback);
 
-                new Thread() {
-                    @Override
-                    public void run() {
-                        while (true) {
-                            try {
-                                Thread.sleep(1000);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                            if (mMediaController.getMetadata() != null) {
-                                Set<String> set = ((MediaMetadataCompat) mMediaController.getMetadata()).keySet();
-                                for (String strig : set) {
-                                    Log.e("RunTest", "-------歌曲作者------???" + strig);
-                                }
-                            } else {
-                                Log.e("RunTest", "-------数据集为空------???");
-                            }
-
-                        }
-
-                    }
-                }.start();
+//                new Thread() {
+//                    @Override
+//                    public void run() {
+//                        while (true) {
+//                            try {
+//                                Thread.sleep(1000);
+//                            } catch (InterruptedException e) {
+//                                e.printStackTrace();
+//                            }
+//                            if (mMediaController.getMetadata() != null) {
+//                                Set<String> set = ((MediaMetadataCompat) mMediaController.getMetadata()).keySet();
+//                                for (String strig : set) {
+//                                }
+//                            } else {
+//                            }
+//
+//                        }
+//
+//                    }
+//                }.start();
             } catch (Exception e) {
                 Log.e(getClass().getName(), "serviceConnectedException==" + e.getMessage());
             }
@@ -193,34 +189,38 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     protected void onResume() {
-        Log.e("RunTest4","----onResume--mMediaBrowser客户端-------???"+mMediaBrowser.isConnected());
-
+        mediaSessionTest();
         QQMusicReciver mbr = new QQMusicReciver();
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction("com.android.music.metachanged");
         intentFilter.addAction("com.android.music.queuechanged");
         intentFilter.addAction("com.android.music.playbackcomplete");
         intentFilter.addAction("com.android.music.playstatechanged");
-        intentFilter.addAction("com.tencent.qqmusictv.ACTION_RATE_DIALOG_ADD_LISTEN_COUNT");
-        intentFilter.addAction("com.tencent.qqmusictv.ACTION_PLAY_STARTED.QQMusicTV");
-        intentFilter.addAction("com.tencent.qqmusictv.ACTION_START_PLAYSONG.QQMusicTV");
-        intentFilter.addAction("com.tencent.qqmusictv.ACTION_META_CHANGED.QQMusicTV");
-        intentFilter.addAction("com.tencent.qqmusictv.ACTION_PLAYSONG_CHANGED.QQMusicTV");
-        intentFilter.addAction("com.tencent.qqmusictv.ACTION_SONG_PLAY_STOPPING.QQMusicTV");
-        intentFilter.addAction("com.tencent.qqmusictv.ACTION_PLAYLIST_CHANGED.QQMusicTV");
-        intentFilter.addAction("com.tencent.qqmusictv.ACTION_BACKGROUND_FOREGROUND_STATE_CHANGED.QQMusicTV");
-        intentFilter.addAction("com.tencent.qqmusictv");
-        intentFilter.addAction("wns.heartbeat");
-        intentFilter.addAction("com.tencent.qqmusictv.ACTION_SEARCH_BEGIN.QQMusicTV");
-        intentFilter.addAction("com.tencent.qqmusictv.ACTION_SEARCH_FINISH.QQMusicTV");
-        intentFilter.addAction("android.media.AUDIO_BECOMING_NOISY");
+//        intentFilter.addAction("com.tencent.qqmusictv.ACTION_RATE_DIALOG_ADD_LISTEN_COUNT");
+//        intentFilter.addAction("com.tencent.qqmusictv.ACTION_PLAY_STARTED.QQMusicTV");
+//        intentFilter.addAction("com.tencent.qqmusictv.ACTION_START_PLAYSONG.QQMusicTV");
+//        intentFilter.addAction("com.tencent.qqmusictv.ACTION_META_CHANGED.QQMusicTV");
+//        intentFilter.addAction("com.tencent.qqmusictv.ACTION_PLAYSONG_CHANGED.QQMusicTV");
+//        intentFilter.addAction("com.tencent.qqmusictv.ACTION_SONG_PLAY_STOPPING.QQMusicTV");
+//        intentFilter.addAction("com.tencent.qqmusictv.ACTION_PLAYLIST_CHANGED.QQMusicTV");
+//        intentFilter.addAction("com.tencent.qqmusictv.ACTION_BACKGROUND_FOREGROUND_STATE_CHANGED.QQMusicTV");
+//        intentFilter.addAction("com.tencent.qqmusictv");
+//        intentFilter.addAction("wns.heartbeat");
+//        intentFilter.addAction("com.tencent.qqmusictv.ACTION_SEARCH_BEGIN.QQMusicTV");
+//        intentFilter.addAction("com.tencent.qqmusictv.ACTION_SEARCH_FINISH.QQMusicTV");
+//        intentFilter.addAction("android.media.AUDIO_BECOMING_NOISY");
+        intentFilter.addAction("com.tencent.qqmusictv.ACTION_META_CHANGEDQQMusicTV");
+        intentFilter.addAction("com.tencent.qqmusictv.ACTION_PLAYLIST_CHANGEDQQMusicTV");
+        intentFilter.addAction("com.tencent.qqmusictv.ACTION_PLAYSONG_CHANGEDQQMusicTV");
 //        intentFilter.addAction("");
 //        intentFilter.addAction("");
 //        intentFilter.addAction("");
 //        intentFilter.addAction("");
-        registerReceiver(mbr, intentFilter);
+//        intentFilter.addAction("");
+//        registerReceiver(mbr, intentFilter);
         super.onResume();
     }
 
@@ -308,22 +308,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     //-----------------------------------------------------------------------------------------------
 
 
-
-
-
     RemoteController.OnClientUpdateListener mExternalClientUpdateListener =
             new RemoteController.OnClientUpdateListener() {
                 @Override
                 public void onClientChange(boolean clearing) {
 
-                    // Log.e(TAG, "onClientChange()...");
 
                 }
 
                 @Override
                 public void onClientPlaybackStateUpdate(int state) {
 
-                    // Log.e(TAG, "onClientPlaybackStateUpdate()...");
                 }
 
                 @Override
@@ -377,5 +372,98 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             + "duration:" + duration);
                 }
             };
+
+
+    private int count = 0;
+    private MediaSessionCompat mediaSessionCompat;
+    private MediaControllerCompat controllerCompat;
+    private MediaSession mediaSession;
+    private MediaController mediaController;
+
+    private android.media.session.MediaSessionManager manager;
+    private List<MediaController> list;
+
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    public void mediaSessionTest() {
+        AudioManager mAm = (AudioManager) getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
+        mAm.requestAudioFocus(new AudioManager.OnAudioFocusChangeListener() {
+                                  @Override
+                                  public void onAudioFocusChange(int focusChange) {
+
+                                  }
+                              },
+                AudioManager.STREAM_MUSIC,
+                AudioManager.AUDIOFOCUS_GAIN);
+
+
+        mediaSessionCompat = new MediaSessionCompat(this, "21212");
+        //获取到的是当前app的MediaController
+        controllerCompat = mediaSessionCompat.getController();
+        mediaSession = (MediaSession) mediaSessionCompat.getMediaSession();
+        //获取到的是当前app的MediaController
+        mediaController = mediaSession.getController();
+        manager = (android.media.session.MediaSessionManager) getSystemService(Context.MEDIA_SESSION_SERVICE);
+
+
+        new Thread() {
+            @SuppressLint("NewApi")
+            @Override
+            public void run() {
+                while (true) {
+                    try {
+                        Thread.sleep(10000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            count++;
+                            Log.e("RunTest111", "------再次循环-----???" + count);
+                            Log.e("RunTest111", "-------00010002----???" + mediaController.getPackageName());
+                            Log.e("RunTest111", "-----------???" + controllerCompat.getPackageName());
+
+                            list = manager.getActiveSessions(null);
+                            Log.e("RunTest111", "-----------???" + list);
+                            Log.e("RunTest111", "-----------???" + list.size());
+                            for (int i = 0; i < list.size(); i++) {
+                                MediaMetadata mediaMetadataCompat = list.get(i).getMetadata();
+                                Log.e("RunTest111", "-----------???" + mediaMetadataCompat);
+                                if (mediaMetadataCompat != null) {
+                                    for (String s : mediaMetadataCompat.keySet()) {
+                                        Log.e("RunTest111", "-----键值对--------???" + s + "?---?"
+                                                + mediaMetadataCompat.getString(s));
+
+                                    }
+
+                                    for (int j = 0; j < list.size(); j++) {
+                                        if ("com.tencent.qqmusictv".equals(list.get(i).getPackageName())) {
+                                            MediaMetadata mediaMetadata1 = list.get(i).getMetadata();
+                                            MediaMetadataCompat mediaMetadata = MediaMetadataCompat.fromMediaMetadata(mediaMetadata1);
+                                            String album = mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_ALBUM);
+                                            String artist = mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_ARTIST);
+                                            String title = mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_TITLE);
+                                            @SuppressLint("WrongConstant") String icon = mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON);
+                                            String writer = mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_WRITER);
+                                            String subtitle = mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE);
+                                            @SuppressLint("WrongConstant") String duration = mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_DURATION);
+                                            @SuppressLint("WrongConstant") String art = mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_ART);
+                                            String discription = mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_DISPLAY_DESCRIPTION);
+
+                                        }
+                                    }
+
+                                }
+                            }
+
+
+                        }
+                    });
+
+                }
+            }
+        }.start();
+    }
 
 }

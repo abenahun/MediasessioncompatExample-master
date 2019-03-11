@@ -46,7 +46,6 @@ public class AudioPlayerService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.e("RunTest","------创建服务-------???");
         //获取audio service
         mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         mediaPlayerHelper = new MediaPlayerHelper(getApplicationContext());
@@ -55,7 +54,6 @@ public class AudioPlayerService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.e("RunTest","--------启动服务-----???");
         if (intent != null && intent.getAction() != null) {
             switch (intent.getAction()) {
                 case ACTION_PLAY:
@@ -78,7 +76,6 @@ public class AudioPlayerService extends Service {
 
     @Override
     public void onDestroy() {
-        Log.e("RunTest","-----销毁服务--------???");
         super.onDestroy();
         mediaPlayerHelper.destoryService();
     }

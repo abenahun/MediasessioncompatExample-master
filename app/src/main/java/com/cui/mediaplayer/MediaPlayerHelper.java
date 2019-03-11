@@ -88,7 +88,6 @@ public class MediaPlayerHelper implements
         //就是activity和notification的播放的回调方法。都会走到这里进行加载网络音频
         @Override
         public void onPlayFromUri(Uri uri, Bundle extras) {
-            Log.e("RunTest","---onPlayFromUri----------???");
             MusicEntity entity = list_data.get(last_index);
             try {
                 switch (mPlaybackState.getState()) {
@@ -132,7 +131,6 @@ public class MediaPlayerHelper implements
 
         @Override
         public void onPlay() {
-            Log.e("RunTest","---播放----------???");
             switch (mPlaybackState.getState()) {
                 case PlaybackStateCompat.STATE_PAUSED:
                     mMediaPlayer.start();
@@ -148,7 +146,6 @@ public class MediaPlayerHelper implements
         //下一曲
         @Override
         public void onSkipToNext() {
-            Log.e("RunTest","-------下一曲------???");
             super.onSkipToNext();
             if (last_index < list_data.size() - 1)
                 last_index++;
@@ -161,7 +158,6 @@ public class MediaPlayerHelper implements
         //上一曲
         @Override
         public void onSkipToPrevious() {
-           Log.e("RunTest","----上一曲---------???");
             super.onSkipToPrevious();
             if (last_index > 0)
                 last_index--;
@@ -186,8 +182,6 @@ public class MediaPlayerHelper implements
      * @param mContext
      */
     private void initService(Context mContext) {
-        Log.e("RunTest","---helper--initService--------???");
-
         //传递播放的状态信息
         mPlaybackState = new PlaybackStateCompat.Builder().
                 setState(PlaybackStateCompat.STATE_NONE, 0, 1.0f)
@@ -221,7 +215,6 @@ public class MediaPlayerHelper implements
     //播放前的准备动作回调
     @Override
     public void onPrepared(MediaPlayer mediaPlayer) {
-        Log.e("RunTest","-------播放前的准备动作回调------???");
         mMediaPlayer.start();
         mPlaybackState = new PlaybackStateCompat.Builder()
                 .setState(PlaybackStateCompat.STATE_PLAYING, 0, 1.0f)
@@ -236,7 +229,6 @@ public class MediaPlayerHelper implements
     //缓冲更新
     @Override
     public void onBufferingUpdate(MediaPlayer mediaPlayer, int percent) {
-        Log.e("RunTest","----缓冲更新---------???");
         if (playerUpdateListener != null)
             playerUpdateListener.onBufferingUpdate(mediaPlayer, percent);
     }
@@ -263,7 +255,6 @@ public class MediaPlayerHelper implements
      * 更新通知栏
      */
     private void updateNotification() {
-        Log.e("RunTest","----------更新通知栏---???");
         NotificationCompat.Action playPauseAction = mPlaybackState.getState() == PlaybackStateCompat.STATE_PLAYING ?
                 createAction(R.drawable.img_pause, "Pause", AudioPlayerService.ACTION_PAUSE) :
                 createAction(R.drawable.img_play, "Play", AudioPlayerService.ACTION_PLAY);

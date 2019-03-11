@@ -10,16 +10,42 @@ android {
         versionCode 1
         versionName "1.0"
     }
-    buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-        }
-    }
+
     dataBinding {
         enabled = true
     }
+
+    signingConfigs {
+        release {
+            storeFile file("../tools/vidaa_signature_tool/demomusic111.jks")
+            storePassword '123456'
+            keyAlias 'key0'
+            keyPassword '123456'
+        }
+        debug {
+            storeFile file("../tools/vidaa_signature_tool/demomusic111.jks")
+            storePassword '123456'
+            keyAlias 'key0'
+            keyPassword '123456'
+        }
+    }
+
+    buildTypes {//必须放置在配置文件的后面,否则属性无法找到
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+
+        }
+
+        debug{
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.debug
+        }
+    }
 }
+
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
