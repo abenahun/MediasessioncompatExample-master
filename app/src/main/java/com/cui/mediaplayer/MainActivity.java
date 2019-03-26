@@ -16,12 +16,19 @@ import android.media.MediaPlayer;
 import android.media.RemoteController;
 import android.media.session.MediaController;
 import android.media.session.MediaSession;
+import android.media.session.MediaSessionManager;
+import android.media.session.PlaybackState;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.RemoteException;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
 import android.support.v4.media.MediaBrowserCompat;
 import android.support.v4.media.MediaMetadataCompat;
+import android.support.v4.media.session.IMediaControllerCallback;
+import android.support.v4.media.session.IMediaSession;
 import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
@@ -32,6 +39,7 @@ import android.widget.SeekBar;
 
 import com.cui.mediaplayer.databinding.ActivityMainBinding;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -416,54 +424,157 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         e.printStackTrace();
                     }
 
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            count++;
-                            Log.e("RunTest111", "------再次循环-----???" + count);
-                            Log.e("RunTest111", "-------00010002----???" + mediaController.getPackageName());
-                            Log.e("RunTest111", "-----------???" + controllerCompat.getPackageName());
-
-                            list = manager.getActiveSessions(null);
-                            Log.e("RunTest111", "-----------???" + list);
-                            Log.e("RunTest111", "-----------???" + list.size());
-                            for (int i = 0; i < list.size(); i++) {
-                                MediaMetadata mediaMetadataCompat = list.get(i).getMetadata();
-                                Log.e("RunTest111", "-----------???" + mediaMetadataCompat);
-                                if (mediaMetadataCompat != null) {
-                                    for (String s : mediaMetadataCompat.keySet()) {
-                                        Log.e("RunTest111", "-----键值对--------???" + s + "?---?"
-                                                + mediaMetadataCompat.getString(s));
-
-                                    }
-
-                                    for (int j = 0; j < list.size(); j++) {
-                                        if ("com.tencent.qqmusictv".equals(list.get(i).getPackageName())) {
-                                            MediaMetadata mediaMetadata1 = list.get(i).getMetadata();
-                                            MediaMetadataCompat mediaMetadata = MediaMetadataCompat.fromMediaMetadata(mediaMetadata1);
-                                            String album = mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_ALBUM);
-                                            String artist = mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_ARTIST);
-                                            String title = mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_TITLE);
-                                            @SuppressLint("WrongConstant") String icon = mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON);
-                                            String writer = mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_WRITER);
-                                            String subtitle = mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE);
-                                            @SuppressLint("WrongConstant") String duration = mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_DURATION);
-                                            @SuppressLint("WrongConstant") String art = mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_ART);
-                                            String discription = mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_DISPLAY_DESCRIPTION);
-
-                                        }
-                                    }
-
-                                }
-                            }
-
-
-                        }
-                    });
+                    runMainThread();
 
                 }
             }
         }.start();
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    private void runMainThread() {
+        runOnUiThread(new Runnable() {
+            @SuppressLint("RestrictedApi")
+            @Override
+            public void run() {
+                count++;
+                Log.e("RunTest111", "------再次循环-----???" + count);
+                Log.e("RunTest111", "-----------???" + mediaController.getPackageName());
+                Log.e("RunTest111", "-----------???" + controllerCompat.getPackageName());
+
+
+                //获取正在运行的mediacontroller
+                list = manager.getActiveSessions(null);
+                Log.e("RunTest111", "-----------???" + list);
+                Log.e("RunTest111", "----个数-------???" + list.size());
+                for (int i = 0; i < list.size(); i++) {
+                    MediaMetadata mediaMetadataCompat = list.get(i).getMetadata();
+//       mediaController=new MediaController(MainActivity.this,list.get(i).getSessionToken());
+                    Log.e("RunTest111", "-----------???" + mediaMetadataCompat);
+                    Log.e("RunTest111", "-----播放信息------???" + list.get(i).getPlaybackInfo());
+                    if (mediaMetadataCompat != null) {
+                        getMediaSessionCompat(list.get(i).getSessionToken());
+                        registerCallback(list.get(i));
+                        for (String s : mediaMetadataCompat.keySet()) {
+                            Log.e("RunTest111", "-----键值对--------???" + s + "?---?"
+                                    + mediaMetadataCompat.getString(s));
+                            if ("android.media.metadata.WRITER".equals(s)) {
+                                File file = new File(mediaMetadataCompat.getString(s));
+                                Log.e("RunTest111", "-----文件是否存在--------???"
+                                        + file.exists());
+                            }
+
+                        }
+
+
+                    }
+                }
+
+
+            }
+        });
+    }
+
+    @SuppressLint("RestrictedApi")
+    private void getMediaSessionCompat(MediaSession.Token token1) {
+        try {
+            MediaSessionCompat.Token token = MediaSessionCompat.Token.fromToken(token1);
+            Log.e("RunTest111", "---异常报错-----11-----???" + token);
+            Log.e("RunTest111", "---异常报错-----22-----???" + token.getExtraBinder());
+            MediaMetadataCompat mediaMetadataCompat1 = ((IMediaSession) (token.getToken())).getMetadata();
+            Log.e("RunTest111", "---异常报错-----33-----???" + mediaMetadataCompat1);
+            for (String s : mediaMetadataCompat1.keySet()) {
+                Log.e("RunTest111", "---nnn--键值对--------???" + s + "?---?"
+                        + mediaMetadataCompat1.getString(s));
+
+            }
+
+        } catch (Exception e) {
+            Log.e("RunTest111", "---异常报错----------???");
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 获取播放信息
+     */
+    private void getInfo() {
+//        for (int j = 0; j < list.size(); j++) {
+//            if ("com.tencent.qqmusictv".equals(list.get(i).getPackageName())) {
+//                MediaMetadata mediaMetadata1 = list.get(i).getMetadata();
+//                MediaMetadataCompat mediaMetadata = MediaMetadataCompat.fromMediaMetadata(mediaMetadata1);
+//                String album = mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_ALBUM);
+//                String artist = mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_ARTIST);
+//                String title = mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_TITLE);
+//                @SuppressLint("WrongConstant") String icon = mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON);
+//                String writer = mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_WRITER);
+//                String subtitle = mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE);
+//                @SuppressLint("WrongConstant") String duration = mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_DURATION);
+//                @SuppressLint("WrongConstant") String art = mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_ART);
+//                String discription = mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_DISPLAY_DESCRIPTION);
+//
+//            }
+//        }
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    public void registerCallback(MediaController mediaControllerCompat) {
+        mediaControllerCompat.registerCallback(new MediaController.Callback() {
+            @Override
+            public void onSessionDestroyed() {
+                super.onSessionDestroyed();
+                Log.e("RunTest111", "----onSessionDestroyed---------???");
+            }
+
+            @Override
+            public void onSessionEvent(@NonNull String event, @Nullable Bundle extras) {
+                super.onSessionEvent(event, extras);
+                Log.e("RunTest111", "-----onSessionEvent--------???");
+            }
+
+            @Override
+            public void onPlaybackStateChanged(@Nullable PlaybackState state) {
+                super.onPlaybackStateChanged(state);
+                Log.e("RunTest111", "-----onPlaybackStateChanged--------???"+state.getExtras());
+            }
+
+            @Override
+            public void onMetadataChanged(@Nullable MediaMetadata metadata) {
+                super.onMetadataChanged(metadata);
+                for (String s:metadata.keySet()) {
+                    Log.e("RunTest111", "-----onMetadataChanged--------???"
+
+                    +s+"?---?"+metadata.getString(s)
+                    );
+
+                }
+                Log.e("RunTest111", "-----onMetadataChanged--------???");
+            }
+
+            @Override
+            public void onQueueChanged(@Nullable List<MediaSession.QueueItem> queue) {
+                Log.e("RunTest111", "------onQueueChanged-------???");
+                super.onQueueChanged(queue);
+            }
+
+            @Override
+            public void onQueueTitleChanged(@Nullable CharSequence title) {
+                super.onQueueTitleChanged(title);
+                Log.e("RunTest111", "------onQueueTitleChanged-------???");
+            }
+
+            @Override
+            public void onExtrasChanged(@Nullable Bundle extras) {
+                super.onExtrasChanged(extras);
+                Log.e("RunTest111", "-----onExtrasChanged--------???");
+            }
+
+            @Override
+            public void onAudioInfoChanged(MediaController.PlaybackInfo info) {
+                super.onAudioInfoChanged(info);
+                Log.e("RunTest111", "--onAudioInfoChanged-----------???");
+            }
+        });
     }
 
 }
